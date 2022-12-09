@@ -24,8 +24,12 @@ def getRentals(request):
 
 
 def getData():
-    dddd = Reservation.objects.all()
-    serializer = ReservationSerializer(dddd, many=True)
+    reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id"))
+
+    reservations = Reservation.objects.all().annotate(
+        previous_reservation=Subquery(reservation_qs.values('id')[:1])
+    )
+    serializer = ReservationSerializer(reservations, many=True)
 
     return serializer.data
 
