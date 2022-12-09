@@ -37,14 +37,15 @@ def getPerformance(request):
 
 @api_view(['GET'])
 def getReservations(request):
-    # reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id")).order_by("-id")
+    reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id"))
 
-    # reservations = Reservation.objects.all().annotate(
-    #     previous_reservation=Subquery(reservation_qs.values('id')[:1])
-    # )
+    reservations = Reservation.objects.all().annotate(
+        previous_reservation=Subquery(reservation_qs.values('id')[:1])
+    )
+    serializer = ReservationSerializer(reservations, many=True)
 
     
-    return Response(getData())
+    return Response(serializer.data)
 
 
 
@@ -56,8 +57,8 @@ def getReservation(request,id):
         previous_reservation=Subquery(reservation_qs.values('id')[:1])
     )
 
-    print('reservations')
-    print(reservations)
+    # print('reservations')
+    # print(reservations)
     
     if not reservations:
         return Response({})
