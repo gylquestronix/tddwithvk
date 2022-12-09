@@ -1,3 +1,7 @@
+import timeit
+
+from django.core.cache import cache
+from django.db.models import OuterRef, Subquery
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -18,16 +22,48 @@ def getRentals(request):
     serializer = RentalSerializer(rentals, many=True)
     return Response(serializer.data)
 
+
+def getData():
+    dddd = Reservation.objects.all()
+    serializer = ReservationSerializer(dddd, many=True)
+
+    return serializer.data
+
+@api_view(['GET'])
+def getPerformance(request):
+
+    return Response(timeit.timeit(stmt=getData, number=1000, globals=globals()))
+
+
 @api_view(['GET'])
 def getReservations(request):
-    reservations = Reservation.objects.all()
-    serializer = ReservationSerializer(reservations, many=True)
-    return Response(serializer.data)
+    # reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id")).order_by("-id")
+
+    # reservations = Reservation.objects.all().annotate(
+    #     previous_reservation=Subquery(reservation_qs.values('id')[:1])
+    # )
+
+    
+    return Response(getData())
+
+
 
 @api_view(['GET'])
 def getReservation(request,id):
-    reservation = Reservation.objects.get(pk=id)
-    serializer = ReservationSerializer(reservation, many=False)
-    return Response(serializer.data)
+    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id")).order_by("-id")
 
-    # return Response({"rental_name":'Rental 1'})
+    reservations = Reservation.objects.filter(id=id).annotate(
+        previous_reservation=Subquery(reservation_qs.values('id')[:1])
+    )
+
+    print('reservations')
+    print(reservations)
+    
+    if not reservations:
+        return Response({})
+
+    reservation = reservations[0]
+
+    serializer = ReservationSerializer(reservation, many=False)
+
+    return Response(serializer.data)

@@ -4,6 +4,7 @@
 
 # from rest_framework.test import APITestCase
 
+import datetime
 import json
 
 from django.contrib.auth.models import User
@@ -12,10 +13,9 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from base.models import Rental, Reservation
 from api.serializers import RentalSerializer, ReservationSerializer
+from base.models import Rental, Reservation
 
-import datetime
 
 class ReservationTestCase(APITestCase):
 
@@ -51,6 +51,18 @@ class ReservationTestCase(APITestCase):
             rental = Rental.objects.get(id=2),
             checkin=datetime.date(2022,1,20),
             checkout=datetime.date(2022,2,11)
+        )
+
+        Reservation.objects.create(
+            rental = Rental.objects.get(id=2),
+            checkin=datetime.date(2022,7,23),
+            checkout=datetime.date(2022,7,28)
+        )
+
+        Reservation.objects.create(
+            rental = Rental.objects.get(id=2),
+            checkin=datetime.date(2022,5,23),
+            checkout=datetime.date(2022,6,28)
         )
 
     def test_reservation1(self):
@@ -127,6 +139,31 @@ class ReservationTestCase(APITestCase):
         checkin = '2022-01-20'
         checkout = '2022-02-11'
         prev_id = 4
+
+        url = reverse('reservation', kwargs={"id":_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.data['rental_name'], rental_name)
+        self.assertEqual(response.data['id'], _id)
+        self.assertEqual(response.data['checkin'], checkin)
+        self.assertEqual(response.data['checkout'], checkout)
+        self.assertEqual(response.data['previous_reservation'], prev_id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_reservation6(self):
+        _id = 7
+        rental_name = 'Rental-2'
+        checkin = '2022-05-23'
+        checkout = '2022-06-28'
+        prev_id = 5
+
+
+        # Reservation.objects.create(
+        #     rental = Rental.objects.get(id=2),
+        #     checkin=datetime.date(2022,5,23),
+        #     checkout=datetime.date(2022,6,28)
+        # )
+
 
         url = reverse('reservation', kwargs={"id":_id})
         response = self.client.get(url)
