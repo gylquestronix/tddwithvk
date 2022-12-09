@@ -24,7 +24,7 @@ def getRentals(request):
 
 
 def getData():
-    reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id"))
+    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id"))
 
     reservations = Reservation.objects.all().annotate(
         previous_reservation=Subquery(reservation_qs.values('id')[:1])
@@ -41,7 +41,7 @@ def getPerformance(request):
 
 @api_view(['GET'])
 def getReservations(request):
-    reservation_qs = Reservation.objects.filter(id__lt=OuterRef("id"),rental=OuterRef("rental_id"))
+    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id"))
 
     reservations = Reservation.objects.all().annotate(
         previous_reservation=Subquery(reservation_qs.values('id')[:1])
