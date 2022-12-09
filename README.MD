@@ -2,8 +2,8 @@
 
 Before you begin we recommend you read about the basics:
 
-- a
-- b
+- add later
+- add later
 
 ## Prerequisites
 
@@ -56,3 +56,17 @@ PS: change the ALLOWED_HOSTS in settings.py
 ## shell command
 
 `docker-compose run  web  python3.9 manage.py shell`
+
+
+## test
+
+`docker-compose run  web  python3.9 manage.py test`
+
+
+## sample screenshots
+<img width="464" alt="image" src="https://user-images.githubusercontent.com/115542336/205932913-10a1ae9f-6371-4f21-b692-a4e99133c421.png">
+<img width="1205" alt="image" src="https://user-images.githubusercontent.com/115542336/205933199-95c478f2-de2a-4a61-b924-1a477b016a36.png">
+<img width="1296" alt="image" src="https://user-images.githubusercontent.com/115542336/205933327-b02ace04-be95-42a6-8965-1d5659b0185e.png">
+
+
+
