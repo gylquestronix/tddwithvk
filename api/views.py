@@ -1,13 +1,11 @@
 import timeit
 
-from django.core.cache import cache
-from django.db.models import OuterRef, Subquery
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from base.models import Rental, Reservation
 
-from .serializers import RentalSerializer, ReservationSerializer
+from .serializers import RentalSerializer
 
 
 @api_view(['GET'])
@@ -22,53 +20,75 @@ def getRentals(request):
     serializer = RentalSerializer(rentals, many=True)
     return Response(serializer.data)
 
-
-def getData():
-    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id"))
-
-    reservations = Reservation.objects.all().annotate(
-        previous_reservation=Subquery(reservation_qs.values('id')[:1])
-    )
-    serializer = ReservationSerializer(reservations, many=True)
-
-    return serializer.data
-
 @api_view(['GET'])
 def getPerformance(request):
+    return Response(timeit.timeit(stmt=getReservationsData, number=10000, globals=globals()))
 
-    return Response(timeit.timeit(stmt=getData, number=1000, globals=globals()))
+def transformReservation(reservation):
+    previous_reservation = reservation.previous_reservation
 
+    if not previous_reservation:
+        previous_reservation = ' - '
+    
+    return {
+            'id': reservation.id, 
+            'checkin': reservation.checkin.strftime("%Y-%m-%d"), 
+            'checkout':reservation.checkout.strftime("%Y-%m-%d"),
+            'rental_name': reservation.rental_name,
+            'previous_reservation': previous_reservation,
+        }
+
+def getReservationsData():
+    # reservations = Reservation.objects.annotate(
+    #     previous_reservation=Subquery(Reservation.objects.filter(checkin__lt=OuterRef("checkin"), rental=OuterRef("rental_id")).order_by("-id").values('id')[:1]),
+    #     rental_name=Subquery(Rental.objects.filter(pk=OuterRef("rental_id")).values('name')[:1])
+    # )
+
+    #ref:https://hakibenita.com/django-rest-framework-slow
+
+    reservations = Reservation.objects.raw("SELECT base_reservation.id, base_reservation.checkin, base_reservation.checkout,(SELECT U0.id FROM base_reservation U0 WHERE (U0.checkin < base_reservation.checkin AND U0.rental_id = base_reservation.rental_id) ORDER BY U0.id DESC LIMIT 1) AS previous_reservation,(SELECT U0.name FROM base_rental U0 WHERE U0.id = base_reservation.rental_id LIMIT 1 ) AS rental_name FROM base_reservation")
+
+    output = []
+
+    for reservation in reservations:
+        output.append(
+            transformReservation(reservation)
+        )
+
+    return output
 
 @api_view(['GET'])
 def getReservations(request):
-    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id"))
+    data = getReservationsData()
 
-    reservations = Reservation.objects.all().annotate(
-        previous_reservation=Subquery(reservation_qs.values('id')[:1])
-    )
-    serializer = ReservationSerializer(reservations, many=True)
+    timer = timeit.timeit(stmt=getReservationsData, number=10000, globals=globals())
 
+    print('timer')
+    print(timer)
     
-    return Response(serializer.data)
+    return Response(data)
 
 
+def getOneData():
+    getReservationData(1)
+
+def getReservationData(id):
+    query = "SELECT base_reservation.id, base_reservation.checkin, base_reservation.checkout,(SELECT U0.id FROM base_reservation U0 WHERE (U0.checkin < base_reservation.checkin AND U0.rental_id = base_reservation.rental_id) ORDER BY U0.id DESC LIMIT 1) AS previous_reservation,(SELECT U0.name FROM base_rental U0 WHERE U0.id = base_reservation.rental_id LIMIT 1 ) AS rental_name FROM base_reservation WHERE id = {}".format(id)
+
+    reservations = Reservation.objects.raw(query)
+
+    for reservation in reservations:
+        return transformReservation(reservation)
+
+    return {}
 
 @api_view(['GET'])
 def getReservation(request,id):
-    reservation_qs = Reservation.objects.filter(checkin__lt=OuterRef("checkin"),rental=OuterRef("rental_id")).order_by("-id")
+    data = getReservationData(id)
 
-    reservations = Reservation.objects.filter(id=id).annotate(
-        previous_reservation=Subquery(reservation_qs.values('id')[:1])
-    )
+    timer = timeit.timeit(stmt=getOneData, number=10000, globals=globals())
 
-    # print('reservations')
-    # print(reservations)
-    
-    if not reservations:
-        return Response({})
+    print('timer')
+    print(timer)
 
-    reservation = reservations[0]
-
-    serializer = ReservationSerializer(reservation, many=False)
-
-    return Response(serializer.data)
+    return Response(data)

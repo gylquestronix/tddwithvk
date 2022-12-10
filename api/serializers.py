@@ -4,8 +4,8 @@ from base.models import Rental, Reservation
 
 
 class ReservationSerializer(serializers.ModelSerializer):
-    rental = serializers.StringRelatedField()
-    previous_reservation = serializers.IntegerField()
+    # rental = serializers.StringRelatedField()
+    # previous_reservation = serializers.IntegerField()
 
     class Meta:
         model = Reservation
@@ -25,11 +25,11 @@ class ReservationSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        representation['previous_reservation'] = self.getPreviousRentalId(representation['previous_reservation'])
+        # representation['previous_reservation'] = self.getPreviousRentalId(representation['previous_reservation'])
 
-        representation['rental_name'] = representation['rental']
+        # representation['rental_name'] = representation['rental']
 
-        del representation['rental']
+        # del representation['rental']
         return representation
         
 class RentalSerializer(serializers.ModelSerializer):

@@ -11,11 +11,15 @@ class Rental(models.Model):
 
 class Reservation(models.Model):
     rental = models.ForeignKey(Rental,related_name="reservations", on_delete=models.CASCADE)
-    # datetime(2015, 10, 09, 23, 55, 59, 342380)
-    # checkin = models.DateTimeField()
-    # checkout = models.DateTimeField()
     checkin = models.DateField()
     checkout = models.DateField()
+
+    # class Meta:
+    #     indexes = [
+    #     models.Index(fields=['checkin']),
+    # ]
+    # indexing 
+
 
     def __str__(self):
         return 'Res-%s ID' %(self.id) 
